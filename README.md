@@ -1,4 +1,4 @@
-# Eclipse BSPT - A Bliss Edit
+# Eclipse PT - A Bliss Edit
 
 This fork of Eclipse simply adds BSPT Path Traced shadows to all block lights aswell as sun/moon light. 
 
