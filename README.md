@@ -14,6 +14,8 @@ I recommend setting this to something very low, like 0.02, to get the best notic
 
 
 
+----- Regular Eclipse Readme-----
+
 Bliss is already one of the best and most feature rich shaders out there, yet I still wanted more...  
 It started out with smaller features, but then the additions just kept piling up.
 
