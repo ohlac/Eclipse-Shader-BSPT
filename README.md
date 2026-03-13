@@ -2,9 +2,11 @@
 
 This fork of Eclipse adds BSPT Path Traced shadows to all block lights aswell as sun/moon light. 
 
-It is not enabled by default, you can enable it in under Ambient Light -> BSPT PTGI / Block Shadows -> BSPT LPV Block Shadows -> On
+It is not enabled by default, but I have included my own personal settings as a preset called "Path Traced". 
 
-There are also some settings which you can adjust. 
+If you want to adjust it or turn it off, you can find it under Ambient Light -> BSPT PTGI / Block Shadows -> BSPT LPV Block Shadows
+
+There are also some other settings which you can adjust. 
 
 I would recommend keeping the ray count around 4, but you can raise the Shadow Light count to decrease noticable pop-in. 
 
