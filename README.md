@@ -11,6 +11,9 @@ I would recommend keeping the ray count around 4, but you can raise the Shadow L
 You can also adjust the BSPT Shadow Brightness. 
 I recommend setting this to something very low, like 0.02, to get the best noticable results.
 
+
+
+
 Bliss is already one of the best and most feature rich shaders out there, yet I still wanted more...  
 It started out with smaller features, but then the additions just kept piling up.
 
