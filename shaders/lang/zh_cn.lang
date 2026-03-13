@@ -14,7 +14,7 @@ profile.HIGH_GRASS=§b高 + 着色器草
 profile.ALTERNATE_HIGH_GRASS=§b高 + 着色器草 §7(替代风格)
 profile.VERY_HIGH=§9非常高
 profile.ULTRA=§d极致
-profile.BSPT_PTGI=§dPath Traced
+profile.BSPT_PTGI=§5Path Traced
 
 option.OLD_LIGHTLEAK_FIX = 旧版漏光修复
 option.CAVE_DETECTION = 洞穴检测

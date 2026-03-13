@@ -14,7 +14,7 @@ profile.HIGH_GRASS=§bHigh + Shader Grass
 profile.ALTERNATE_HIGH_GRASS=§bHigh + Shader Grass §7(Alt. Style)
 profile.VERY_HIGH=§9Very High
 profile.ULTRA=§dUltra
-profile.BSPT_PTGI=§dPath Traced
+profile.BSPT_PTGI=§5Path Traced
 
 option.OLD_LIGHTLEAK_FIX = Old Lightleak Fix
 option.CAVE_DETECTION = Cave detection
