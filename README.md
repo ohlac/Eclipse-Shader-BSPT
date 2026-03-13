@@ -5,8 +5,11 @@ This fork of Eclipse adds BSPT Path Traced shadows to all block lights aswell as
 It is not enabled by default, you can enable it in under Ambient Light -> BSPT PTGI / Block Shadows -> BSPT LPV Block Shadows -> On
 
 There are also some settings which you can adjust. 
+
 I would recommend keeping the ray count around 4, but you can raise the Shadow Light count to decrease noticable pop-in. 
-You can also adjust the BSPT Shadow Brightness. I recommend setting this to something very low, like 0.02, to get the best noticable results.
+
+You can also adjust the BSPT Shadow Brightness. 
+I recommend setting this to something very low, like 0.02, to get the best noticable results.
 
 Bliss is already one of the best and most feature rich shaders out there, yet I still wanted more...  
 It started out with smaller features, but then the additions just kept piling up.
