@@ -162,6 +162,13 @@ vec3 toLinear(vec3 sRGB){
 #include "/lib/sky_gradient.glsl"
 #include "/lib/ROBOBO_sky.glsl"
 
+#ifdef IS_LPV_ENABLED
+    #ifdef LPV_SHADOWS
+        layout(r32ui) uniform restrict writeonly uimage1D imgCloseLights;
+        layout(r32ui) uniform restrict readonly uimage3D imgSortLights;
+    #endif
+#endif
+
 void main() {
     #if defined SMOOTH_SUN_ROTATION && (daySpeed < 1.0 || nightSpeed < 1.0)
         vec3 WsunVec = WsunVecSmooth;
@@ -433,6 +440,14 @@ void main() {
             sunColorSSBO = vec3(0.0);
 
             moonColorSSBO = vec3(0.0);
+    #endif
+
+    #ifdef IS_LPV_ENABLED
+        #ifdef LPV_SHADOWS
+            for (int i = 0; i < 9; i++) {
+                imageStore(imgCloseLights, i, uvec4(imageLoad(imgSortLights, ivec3(0, 0, i))));
+            }
+        #endif
     #endif
 
     #if defined FLASHLIGHT && defined FLASHLIGHT_BOUNCED_INDIRECT

@@ -368,6 +368,9 @@ float ComputeVoxelShadowMap(inout vec3 directLightColor, vec3 playerPos, float m
 
 	// hamburger
 	projectedShadowPosition = projectedShadowPosition * vec3(0.5,0.5,0.5/6.0) + vec3(0.5);
+	#ifdef LPV_SHADOWS
+		projectedShadowPosition.xy *= 0.8;
+	#endif
 	
 	float shadowmap = 0.0;
 	vec3 translucentTint = vec3(0.0);
@@ -1139,6 +1142,9 @@ float ComputePhotonicsShadowMap(inout vec3 directLightColor, vec3 playerPos, flo
 
 	// hamburger
 	projectedShadowPosition = projectedShadowPosition * vec3(0.5,0.5,0.5/6.0) + vec3(0.5);
+	#ifdef LPV_SHADOWS
+		projectedShadowPosition.xy *= 0.8;
+	#endif
 	
 	float shadowmap = 0.0;
 	vec3 translucentTint = vec3(0.0);
@@ -1711,6 +1717,10 @@ vec3 doBlockLightLightingVoxel(
 				if (abs(shadowPos.x) < 1.0-0.5/2048. && abs(shadowPos.y) < 1.0-0.5/2048.){
 					shadowPos = shadowPos*vec3(0.5,0.5,0.5/6.0)+0.5;
 
+					#ifdef LPV_SHADOWS
+						shadowPos.xy *= 0.8;
+					#endif
+
 					#ifdef TRANSLUCENT_COLORED_SHADOWS
 						sh = vec3(texture(shadowtex0, shadowPos).x);
 
@@ -1851,6 +1861,9 @@ vec3 doBlockLightLightingVoxel(
 				vec3 pos = vec3(spPos.xy*distortFactor, spPos.z);
 				if (abs(pos.x) < 1.0-0.5/2048. && abs(pos.y) < 1.0-0.5/2048){
 					pos = pos*vec3(0.5,0.5,0.5/6.0)+0.5;
+					#ifdef LPV_SHADOWS
+						pos.xy *= 0.8;
+					#endif
 					// sh = texture( shadow, pos).x;
 
 					#ifdef TRANSLUCENT_COLORED_SHADOWS

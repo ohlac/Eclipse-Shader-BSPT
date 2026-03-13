@@ -67,4 +67,7 @@ void main() {
 	#endif
 
   	gl_Position.z /= 6.0;
+	#ifdef LPV_SHADOWS
+		gl_Position.xy = gl_Position.xy * 0.8 - 0.2 * gl_Position.w;
+	#endif
 }

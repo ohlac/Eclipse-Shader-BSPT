@@ -418,6 +418,10 @@ float ComputeShadowMap(inout vec3 directLightColor, vec3 playerPos, float maxDis
 
 	// hamburger
 	projectedShadowPosition = projectedShadowPosition * vec3(0.5,0.5,0.5/6.0) + vec3(0.5);
+
+		#ifdef LPV_SHADOWS
+			projectedShadowPosition.xy *= 0.8;
+		#endif
 	
 	float shadowmap = 0.0;
 	vec3 translucentTint = vec3(0.0);
@@ -1051,9 +1055,9 @@ if (gl_FragCoord.x * texelSize.x < 1.0  && gl_FragCoord.y * texelSize.y < 1.0 )	
 	#endif
 
 	#ifdef MAIN_SHADOW_PASS
-		Indirect_lighting += doBlockLightLighting(lightColor, lightmap.x, feetPlayerPos, lpvPos, viewPos, false, BN, worldSpaceNormal, false);
+		Indirect_lighting += doBlockLightLighting(lightColor, lightmap.x, feetPlayerPos, lpvPos, worldSpaceNormal, viewPos, false, BN, worldSpaceNormal, false);
 	#else
-		Indirect_lighting += doBlockLightLighting(lightColor, lightmap.x, feetPlayerPos, lpvPos);
+		Indirect_lighting += doBlockLightLighting(lightColor, lightmap.x, feetPlayerPos, lpvPos, worldSpaceNormal);
 	#endif
 	
 	vec4 flashLightSpecularData = vec4(0.0);

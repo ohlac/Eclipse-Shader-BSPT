@@ -92,6 +92,49 @@
     }
 #endif
 
+
+#if defined IS_LPV_ENABLED && defined LPV_SHADOWS && !defined VOXY_PROGRAM
+    #include "/lib/cube/cubeData.glsl"
+    #include "/lib/cube/lightData.glsl"
+
+    uniform usampler1D texCloseLights;
+    #ifdef LPV_HAND_SHADOWS
+        uniform vec3 playerLookVector;
+    #endif
+    #if !defined TRANSLUCENT_COLORED_SHADOWS || defined DAMAGE_BLOCK_EFFECT || !defined OVERWORLD_SHADER
+        uniform sampler2DShadow shadowtex0;
+        #ifdef LPV_COLOR_SHADOWS
+            uniform sampler2DShadow shadowtex1;
+            uniform sampler2D shadowcolor0;
+        #endif
+    #endif
+
+    vec3 worldToCube(vec3 worldPos, out int faceIndex) {
+        vec3 worldPosAbs = abs(worldPos);
+        if (worldPosAbs.z >= worldPosAbs.x && worldPosAbs.z >= worldPosAbs.y) faceIndex = worldPos.z <= 0.0 ? 0 : 4;
+        else if (worldPosAbs.y >= worldPosAbs.x) faceIndex = worldPos.y <= 0.0 ? 2 : 1;
+        else faceIndex = worldPos.x <= 0.0 ? 5 : 3;
+        vec4 coord = cubeProjection * directionMatices[faceIndex] * vec4(worldPos, 1.0);
+        coord.xyz /= coord.w;
+        return coord.xyz * 0.5 + 0.5;
+    }
+
+    vec2 cubeOffset(vec2 relativeCoord, int faceIndex, int cube) {
+        return relativeCoord * cubeTileRelativeResolution + cubeFaceOffsets[faceIndex] + renderOffsets[cube];
+    }
+
+    vec3 getCubeShadow(vec3 cubeShadowPos, int faceIndex, int cube) {
+        vec3 pos = vec3(cubeOffset(cubeShadowPos.xy, faceIndex, cube), cubeShadowPos.z);
+        float solid = texture(shadowtex0, pos);
+        #ifdef LPV_COLOR_SHADOWS
+            float noTrans = texture(shadowtex1, pos);
+            return noTrans > solid ? texture(shadowcolor0, pos.xy).rgb : vec3(solid);
+        #else
+            return vec3(solid);
+        #endif
+    }
+#endif
+
 #if defined PHOTONICS && !defined VOXY_PROGRAM && !defined PHOTONICS_INCLUDED && defined PHOTONICS_ACTIVE
     uniform sampler2D radiosity_direct;
     uniform sampler2D radiosity_direct_soft;
@@ -100,7 +143,7 @@
 
 vec3 doBlockLightLighting(
     vec3 lightColor, float lightmap,
-    vec3 playerPos, vec3 lpvPos
+    vec3 playerPos, vec3 lpvPos, vec3 normalWorld
     #ifdef MAIN_SHADOW_PASS
     , vec3 viewPos, bool depthCheck, float noise, vec3 normals, bool hand
     #endif
@@ -132,6 +175,41 @@ vec3 doBlockLightLighting(
         
         // outside the voxel volume, lerp to vanilla lighting as a fallback
         blockLight = mix(blockLight, lpvSample.rgb + lightColor * 2.5 * min(max(lightmap-0.999,0.0)/(1.0-0.999),1.0), voxelRangeFalloff);
+
+        #ifdef LPV_SHADOWS
+            for (int i = 0; i < LPV_SHADOWS_LIGHT_COUNT_EFFECTIVE; i++) {
+                uint data = texelFetch(texCloseLights, i, 0).r;
+                float lightDistEncoded;
+                ivec3 pos;
+                uint blockId;
+                if (getLightData(data, lightDistEncoded, pos, blockId)) {
+                    vec3 lightPos = -fract(previousCameraPosition) - cameraPosition + previousCameraPosition + vec3(pos) - 14.5;
+                    #ifdef LPV_HAND_SHADOWS
+                        if (lightDistEncoded < 0.0001) {
+                            vec2 viewDir = normalize(playerLookVector.xz) * 0.25;
+                            lightPos = -relativeEyePosition + vec3(viewDir.x, 0.0, viewDir.y);
+                        }
+                    #endif
+                    int face = 0;
+                    vec3 dir = playerPos - lightPos;
+                    float d = dot(-normalWorld, normalize(dir));
+                    if (d > 0.0) {
+                        uint blockData = imageLoad(imgBlockData, int(blockId)).r;
+                        vec4 lightColorRange = unpackUnorm4x8(blockData);
+                        lightColorRange.a *= 255.0;
+                        float dist = length(dir);
+                        if (dist < lightColorRange.a) {
+                            const float bias = (3072.0 / shadowMapResolution) * 0.05;
+                            vec3 shadowPos = worldToCube(dir + normalWorld * (0.05 + bias - bias * d), face);
+                            float blend = (1.0 - dist / lightColorRange.a) / (1.0 + dist * -0.3 + dist * dist * 0.4);
+                            blockLight += d * srgbToLinear(lightColorRange.rgb) * getCubeShadow(shadowPos, face, i) * blend;
+                        }
+                    }
+                } else {
+                    break;
+                }
+            }
+        #endif
 
         #ifdef Hand_Held_lights
             // create handheld lightsources

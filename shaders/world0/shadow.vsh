@@ -18,11 +18,20 @@ Read the terms of modification and sharing before changing something below pleas
 !! DO NOT REMOVE !!
 */
 
+#ifdef LPV_SHADOWS
+out DATA {
+	vec2 texcoord;
+	vec3 color;
+};
+out vec3 worldPos;
+flat out vec3 worldNormal;
+#else
 out DATA {
 	vec2 texcoord;
 	vec3 color;	
 	vec3 playerpos;
 };
+#endif
 
 in vec4 mc_midTexCoord;
 in vec4 mc_Entity;
@@ -79,7 +88,9 @@ uniform int entityId;
 const float PI48 = 150.796447372*WAVY_SPEED;
 float pi2wt = PI48*frameTimeCounter;
 
+#ifndef LPV_SHADOWS
 out float LIGHTNING;
+#endif
 
 vec2 calcWave(in vec3 pos) {
 
@@ -211,11 +222,17 @@ void main() {
 	// #endif
 
 	// #if defined IS_LPV_ENABLED || defined WAVY_PLANTS  || !defined PLANET_CURVATURE
-	playerpos = mat3(shadowModelViewInverse) * position + shadowModelViewInverse[3].xyz;
+	vec3 localPlayerPos = mat3(shadowModelViewInverse) * position + shadowModelViewInverse[3].xyz;
+	#ifndef LPV_SHADOWS
+		playerpos = localPlayerPos;
+	#else
+		worldPos = localPlayerPos;
+		worldNormal = mat3(shadowModelViewInverse) * gl_NormalMatrix * gl_Normal;
+	#endif
 	// #endif
 
 	#if defined IS_LPV_ENABLED && defined MC_GL_ARB_shader_image_load_store || (WATER_INTERACTION == 2 && IRIS_VERSION < 11004) || defined SHADER_GRASS
-		PopulateShadowVoxel(playerpos);
+		PopulateShadowVoxel(localPlayerPos);
 	#endif
 
 	// #ifdef WAVY_PLANTS
@@ -227,19 +244,19 @@ void main() {
   	// 			blockId == BLOCK_SAPLING
 	// 		) && length(position.xy) < 24.0
 	// 	) {
-	// 		playerpos += calcMovePlants(playerpos + cameraPosition)*gl_MultiTexCoord1.y;
+	// 		playerpos += calcMovePlants(localPlayerPos + cameraPosition)*gl_MultiTexCoord1.y;
 	// 		position = mat3(shadowModelView) * playerpos + shadowModelView[3].xyz;
   	// 	}
 
   	// 	if (blockId == BLOCK_AIR_WAVING && length(position.xy) < 24.0) {
-	// 		playerpos += calcMoveLeaves(playerpos + cameraPosition, 0.0040, 0.0064, 0.0043, 0.0035, 0.0037, 0.0041, vec3(1.0,0.2,1.0), vec3(0.5,0.1,0.5))*gl_MultiTexCoord1.y;
+	// 		playerpos += calcMoveLeaves(localPlayerPos + cameraPosition, 0.0040, 0.0064, 0.0043, 0.0035, 0.0037, 0.0041, vec3(1.0,0.2,1.0), vec3(0.5,0.1,0.5))*gl_MultiTexCoord1.y;
 	// 		position = mat3(shadowModelView) * playerpos + shadowModelView[3].xyz;
   	// 	}
 	// #endif
 
 	int blockId = int(mc_Entity.x + 0.5);
 
-	vec3 worldpos = playerpos;
+	vec3 worldpos = localPlayerPos;
 	#ifdef WAVY_PLANTS
 		// also use normal, so up/down facing geometry does not get detatched from its model parts.
 		bool InterpolateFromBase = gl_MultiTexCoord0.t < max(mc_midTexCoord.t, abs(viewToWorld(normalize(gl_NormalMatrix * gl_Normal)).y));
@@ -259,16 +276,18 @@ void main() {
 		){
 			// apply displacement for waving leaf blocks specifically, overwriting the other waving mode. these wave off of the air. they wave uniformly
 			if(blockId == BLOCK_AIR_WAVING) {
-				worldpos += calcMoveLeaves(playerpos + cameraPosition, 0.0040, 0.0064, 0.0043, 0.0035, 0.0037, 0.0041, vec3(1.0,0.2,1.0), vec3(0.5,0.1,0.5))*gl_MultiTexCoord1.y;
+				worldpos += calcMoveLeaves(localPlayerPos + cameraPosition, 0.0040, 0.0064, 0.0043, 0.0035, 0.0037, 0.0041, vec3(1.0,0.2,1.0), vec3(0.5,0.1,0.5))*gl_MultiTexCoord1.y;
 			} else {
 				// apply displacement for waving plant blocks
-				worldpos += calcMovePlants(playerpos + cameraPosition) * max(gl_MultiTexCoord1.y,0.5);
+				worldpos += calcMovePlants(localPlayerPos + cameraPosition) * max(gl_MultiTexCoord1.y,0.5);
 			}
 		}
 	#endif
 
+#ifndef LPV_SHADOWS
 	LIGHTNING = 0.0;
 	if (entityId == ENTITY_LIGHTNING) LIGHTNING = 1.0;
+#endif
 
 	#ifdef PLANET_CURVATURE
 		float curvature = length(worldpos.xz) / (16*8);

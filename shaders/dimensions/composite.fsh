@@ -584,6 +584,10 @@ void main() {
 					
 					projectedShadowPosition = projectedShadowPosition * vec3(0.5,0.5,0.5/6.0) + vec3(0.5,0.5,0.5);
 
+				#ifdef LPV_SHADOWS
+					projectedShadowPosition.xy *= 0.8;
+				#endif
+
 					float mult = maxshadowfilt;
 					float avgBlockerDepth = 0.0;
 					#ifndef END_SHADER

@@ -225,7 +225,7 @@ vec3 ApplySSRT(
 	vec3 normal,
 	vec3 noise,
 
-	float lightmap, 
+	float lightmap,
 
 	bool isGrass,
 	bool isLOD
@@ -236,69 +236,60 @@ vec3 ApplySSRT(
 	vec3 occlusion = vec3(0.0);
 	vec3 skycontribution = unchangedIndirect;
 
-	vec3 radiance2 = vec3(0.0);
-	vec3 occlusion2 = vec3(0.0);
-	vec3 skycontribution2 = unchangedIndirect;
 	float CURVE = 1.0;
 	vec3 bouncedLight = vec3(0.0);
-	for (int i = 0; i < nrays; i++){
-		int seed = (frameCounter%40000)*nrays+i;
+
+	for (int i = 0; i < nrays; i++) {
+		int seed = (frameCounter % 40000) * nrays + i;
 		vec2 ij = fract(R2_samples(seed) + noise.xy);
 		vec3 rayDir = TangentToWorld(normal, normalize(cosineHemisphereSample(ij)));
 
-		#ifdef HQ_SSGI
-			vec3 rayHit = rayTrace_GI( mat3(gbufferModelView) * rayDir, viewPos, noise.z, 5.0*RAY_STEPS); // ssr rt
+		#if indirect_RTGI == 2
+			vec3 rayHit = rayTrace_GI(mat3(gbufferModelView) * rayDir, viewPos, noise.z, 5.0 * RAY_STEPS);
 		#else
-			vec3 rayHit = RT_alternate(mat3(gbufferModelView)*rayDir, viewPos, noise.z, RAY_STEPS, isLOD, CURVE);  // choc sspt 
-
-
-			/// RAAAAAAAAAAAAAAAAAAAAAAAAGHH
-			// CURVE = (1.0-exp(-5.0*(1.0-CURVE)));
-			CURVE = 1.0-pow(1.0-pow(1.0-CURVE,2.0),5.0);
+			#ifdef HQ_SSGI
+				vec3 rayHit = rayTrace_GI(mat3(gbufferModelView) * rayDir, viewPos, noise.z, 5.0 * RAY_STEPS);
+			#else
+				vec3 rayHit = RT_alternate(mat3(gbufferModelView) * rayDir, viewPos, noise.z, RAY_STEPS, isLOD, CURVE);
+				CURVE = 1.0 - pow(1.0 - pow(1.0 - CURVE, 2.0), 5.0);
+				CURVE = mix(CURVE, 1.0, clamp(length(viewPos.z) / far, 0.0, 1.0));
+			#endif
 		#endif
 
-		#ifdef SKY_CONTRIBUTION_IN_SSRT
-			#ifdef OVERWORLD_SHADER
-				// skycontribution = doIndirectLighting(pow(skyCloudsFromTexLOD(rayDir, colortex4, 0).rgb/1200.0, vec3(0.7)) * 2.5, minimumLightColor, lightmap) + blockLightColor;
-				skycontribution = doIndirectLighting(skyCloudsFromTex(rayDir, colortex4).rgb/1200.0, minimumLightColor, lightmap) + blockLightColor;
+		#ifdef OVERWORLD_SHADER
+			#if indirect_RTGI == 0
+				#ifdef SKY_CONTRIBUTION_IN_SSRT
+					skycontribution = doIndirectLighting(skyCloudsFromTex(rayDir, colortex4).rgb / 1200.0, minimumLightColor, lightmap);
+					skycontribution += blockLightColor;
+				#else
+					skycontribution = unchangedIndirect * (max(rayDir.y, pow(1.0 - lightmap, 2.0)) * 0.95 + 0.05) * 1.25;
+				#endif
 			#else
-				skycontribution = volumetricsFromTex(rayDir, colortex4, 6).rgb / 1200.0 + blockLightColor;
+				skycontribution = doIndirectLighting(skyCloudsFromTex(rayDir, colortex4).rgb / 1200.0, minimumLightColor, lightmap);
+				skycontribution = mix(skycontribution, vec3(luma(skycontribution)), 0.25) + blockLightColor;
 			#endif
 		#else
-			#ifdef OVERWORLD_SHADER
-				skycontribution = unchangedIndirect * (max(rayDir.y,pow(1.0-lightmap,2))*0.95+0.05) * 1.25;
-			#endif
+			skycontribution = volumetricsFromTex(rayDir, colortex4, 6).rgb / 1200.0 + blockLightColor;
 		#endif
 
 		radiance += skycontribution;
-		radiance2 += skycontribution2;
 
-		if (rayHit.z < 0.9999 && distance(gl_FragCoord.xy*texelSize, rayHit.xy) > 0.001){
-			#if indirect_effect == SSRT_AO_GI
-				vec3 previousPosition = mat3(gbufferModelViewInverse) * toScreenSpace(rayHit) + gbufferModelViewInverse[3].xyz + cameraPosition-previousCameraPosition;
+		if (rayHit.z < 0.9999 && distance(gl_FragCoord.xy * texelSize, rayHit.xy) > 0.001) {
+			#if indirect_RTGI >= 1 || indirect_effect == SSRT_AO_GI
+				vec3 previousPosition = mat3(gbufferModelViewInverse) * toScreenSpace(rayHit) + gbufferModelViewInverse[3].xyz + cameraPosition - previousCameraPosition;
 				previousPosition = mat3(gbufferPreviousModelView) * previousPosition + gbufferPreviousModelView[3].xyz;
 				previousPosition.xy = projMAD(gbufferPreviousProjection, previousPosition).xy / -previousPosition.z * 0.5 + 0.5;
 
-				if (previousPosition.x > 0.0 && previousPosition.y > 0.0 && previousPosition.x < 1.0 && previousPosition.y < 1.0){
-					bouncedLight = texelFetch(colortex5, ivec2(previousPosition.xy/texelSize),0).rgb * GI_Strength * CURVE;
-
+				if (previousPosition.x > 0.0 && previousPosition.y > 0.0 && previousPosition.x < 1.0 && previousPosition.y < 1.0) {
+					bouncedLight = texelFetch(colortex5, ivec2(previousPosition.xy / texelSize), 0).rgb * GI_Strength * CURVE;
 					radiance += bouncedLight;
-					radiance2 += bouncedLight;
 				}
 			#endif
 
 			occlusion += skycontribution * CURVE;
-			occlusion2 += skycontribution2 * CURVE;
 		}
 	}
-	// return unchangedIndirect * CURVE;
-	if(isLOD) return max(radiance/nrays, 0.0);
 
-	#ifdef SKY_CONTRIBUTION_IN_SSRT
-		return max((radiance - occlusion)/nrays,0.0);
-	#else
-		float threshold = isGrass ? 0.8 : (pow(1.0-lightmap,2.0) * 0.9 + 0.1);
-		return max((radiance - occlusion)/nrays, (radiance2 - occlusion2)/nrays * threshold);
-	#endif
-
+	if (isLOD) return max(radiance / nrays, 0.0);
+	return max((radiance - occlusion) / nrays, 0.0);
 }

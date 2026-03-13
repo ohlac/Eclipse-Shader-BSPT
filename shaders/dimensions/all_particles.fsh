@@ -201,6 +201,10 @@ float ComputeShadowMap(inout vec3 directLightColor, vec3 playerPos, float maxDis
 
 	// hamburger
 	projectedShadowPosition = projectedShadowPosition * vec3(0.5,0.5,0.5/6.0) + vec3(0.5);
+
+		#ifdef LPV_SHADOWS
+			projectedShadowPosition.xy *= 0.8;
+		#endif
 	
 	float shadowmap = 0.0;
 	vec3 translucentTint = vec3(0.0);
@@ -461,7 +465,7 @@ void main() {
 					const vec3 lpvPos = vec3(0.0);
 				#endif
 
-				vec3 Indirect_lighting = doBlockLightLighting(vec3(TORCH_R,TORCH_G,TORCH_B), lightmap.x, feetPlayerPos, lpvPos);
+				vec3 Indirect_lighting = doBlockLightLighting(vec3(TORCH_R,TORCH_G,TORCH_B), lightmap.x, feetPlayerPos, lpvPos, mat3(gbufferModelViewInverse) * vec3(0.0, 1.0, 0.0));
 
 				#ifdef FLASHLIGHT
 					vec4 flashLightSpecularData = vec4(0.0);
@@ -561,7 +565,7 @@ void main() {
 			const vec3 lpvPos = vec3(0.0);
 		#endif
 
-		Indirect_lighting += doBlockLightLighting( vec3(TORCH_R,TORCH_G,TORCH_B), lightmap.x, feetPlayerPos, lpvPos);
+		Indirect_lighting += doBlockLightLighting( vec3(TORCH_R,TORCH_G,TORCH_B), lightmap.x, feetPlayerPos, lpvPos, mat3(gbufferModelViewInverse) * vec3(0.0, 1.0, 0.0));
 
 		#ifdef LINES
 			gl_FragData[0].rgb = (Indirect_lighting + Direct_lighting) * toLinear(color.rgb);
