@@ -6,9 +6,9 @@ It is not enabled by default, but I have included my own personal settings as a 
 
 If you want to adjust it or turn it off, you can find it under Ambient Light -> BSPT PTGI / Block Shadows -> BSPT LPV Block Shadows
 
-There are also some other settings which you can adjust. 
-
-I would recommend keeping the ray count around 4, but you can raise the Shadow Light count to decrease noticable pop-in. 
+Note that the Block Shadows will only be visible if you're within a certain distance from the source, 
+and will fade to normal Eclipse lighting as you move away from it. You can raise the Shadow Light count to increase the distance and decrease noticable pop-in.
+I would recommend keeping the ray count low though, as it can severely impact performance at complex scenes. My recommendation is to keep it between 2-8.
 
 You can also adjust the BSPT Shadow Brightness. 
 I recommend setting this to something very low, like 0.02, to get the best noticable results.
