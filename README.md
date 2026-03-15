@@ -1,4 +1,4 @@
-# Eclipse BSPT - A Ray-Tracing edit of a Bliss Edit
+# Eclipse BSPT - A Ray-Tracing edit of Eclipse
 
 This fork of Eclipse simply adds BSPT Ray Traced shadows to all block lights aswell as sun/moon light. 
 
