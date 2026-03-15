@@ -1,6 +1,6 @@
 # Eclipse BSPT - A Ray-Tracing edit of a Bliss Edit
 
-This fork of Eclipse simply adds BSPT Path Traced shadows to all block lights aswell as sun/moon light. 
+This fork of Eclipse simply adds BSPT Ray Traced shadows to all block lights aswell as sun/moon light. 
 
 It is not enabled by default, but I have included my own personal settings as a preset called "Path Traced". 
 
